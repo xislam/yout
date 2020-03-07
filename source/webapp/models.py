@@ -1,3 +1,6 @@
 from django.db import models
 
-# Create your models here.
+
+class URL(models.Model):
+    link = models.URLField(blank=False)
+    email = models.EmailField(max_length=255)
