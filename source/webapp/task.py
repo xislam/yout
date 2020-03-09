@@ -1,36 +1,27 @@
-# import os
-# import smtplib
-#
-# EMAIL_ADDRESS = os.environ.get('EMAILL_USER')
-# EMAIL_PASSWORD = os.environ.get('EMAILL_PASS')
-#
-# with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
-#     smtp.ehlo()
-#     smtp.starttls()
-#     smtp.ehlo()
-#
-#     smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-#
-#     subject = 'Grad dinner this weekend?'
-#     body = 'How adou dinner at 6pm this Saturday?'
-#
-#     msg = f'Subject: {subject}\n\n{body}'
-#
-#     smtp.sendmail(EMAIL_ADDRESS, 'testovichi07@gmail.com', msg)
-import smtplib
+import youtube_dl
+from django.core.mail import send_mail
+from main import settings
+from main.celery import app
 
-gmail_user = "testovichi07@gmail.com"
-password = "Z"
-TO = 'orunbaev.io@gmail.com'
-SUBJECT = "Testing sending using gmail"
-TEXT = "Hi"
-server = smtplib.SMTP('smtp.gmail.com', 587)
-server = smtplib.SMTP_SSL('smtp.googlemail.com', 465)
-server.login(gmail_user, password)
 
-BODY = '\r\n'.join(['To: %s' % TO,
-        'From: %s' % gmail_user,
-        'Subject: %s' % SUBJECT,
-        '', TEXT])
-server.sendmail(gmail_user, TO, BODY)
-print ('email sent')
+
+@app.task
+def get_mp3(url, email, link):
+    DOWNLOAD_OPTIONS_MP3 = {
+
+        'format': 'bestaudio/best',
+        'outtmpl': 'media/%(title)s.%(ext)s',
+        'nocheckcertificate': True,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
+    with youtube_dl.YoutubeDL(DOWNLOAD_OPTIONS_MP3) as dl:
+        result = dl.extract_info(link)
+        filename = result['title'].replace(' ', '%20').replace(' - ', '%20').replace(' | ', '%20')
+
+    download_link = 'http://' + url + '/media/' + filename.replace(' ', '%20').replace(' - ', '%20').replace(' | ',
+                                                                                                             '%20') + '.mp3'
+    send_mail('Ссылка на скачивание файла', download_link, settings.EMAIL_HOST_USER, [email], fail_silently=False, )
