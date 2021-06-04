@@ -4,7 +4,7 @@ billiard==3.6.3.0
 body==0.1
 celery==4.4.1
 dj-database-url==0.5.0
-Django==3.0.3
+Django==3.1.9
 django-heroku==0.3.1
 downloader==0.98
 gunicorn==20.0.4
